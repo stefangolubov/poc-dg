@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: poc-zap
+  name: poc-zap-app
   labels:
-    app: poc-zap
+    app: poc-zap-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: poc-zap
+      app: poc-zap-app
   template:
     metadata:
       labels:
-        app: poc-zap
+        app: poc-zap-app
     spec:
       containers:
-        - name: poc-zap
+        - name: poc-zap-app
           image: stefangolubov/poc-zap:latest
           ports:
             - containerPort: 9999

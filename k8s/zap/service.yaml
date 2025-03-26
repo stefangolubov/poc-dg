@@ -1,14 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: zap
+  name: zap-service
 spec:
   selector:
-    app: zap
+    app: zap-scanner
   ports:
     - name: webui
+      protocol: TCP
       port: 8080
       targetPort: 8080
     - name: api
+      protocol: TCP
       port: 8090
       targetPort: 8090

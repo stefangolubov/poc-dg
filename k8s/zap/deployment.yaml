@@ -1,24 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: zap
+  name: zap-scanner
+  labels:
+    app: zap-scanner
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: zap
+      app: zap-scanner
   template:
     metadata:
       labels:
-        app: zap
+        app: zap-scanner
     spec:
       containers:
         - name: zap
           image: zaproxy/zap-stable:latest
           command: ["zap-webswing.sh"]
           ports:
-            - containerPort: 8080  # Web UI port
-            - containerPort: 8090  # API port
+            - containerPort: 8080  # Web UI
+            - containerPort: 8090  # API
           readinessProbe:
             httpGet:
               path: /zap/

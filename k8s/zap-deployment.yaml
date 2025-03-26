@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zap
+  template:
+    metadata:
+      labels:
+        app: zap
+    spec:
+      containers:
+        - name: zap
+          image: zaproxy/zap-stable:latest
+          command: ["zap-webswing.sh"]
+          ports:
+            - containerPort: 8080  # Web UI port
+            - containerPort: 8090  # API port
+          readinessProbe:
+            httpGet:
+              path: /zap/
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: zap-session
+              mountPath: /zap/session
+      volumes:
+        - name: zap-session
+          persistentVolumeClaim:
+            claimName: zap-session-pvc

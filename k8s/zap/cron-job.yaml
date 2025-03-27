@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: zap-scheduled-scan
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: zap-scanner
+              image: zaproxy/zap-stable:latest
+              command: ["sh", "-c"]
+              args:
+                - |
+                  mkdir -p /zap/wrk && \
+                  zap-api-scan.py -t http://poc-zap-service/api \
+                  -f openapi \
+                  -r "/zap/wrk/scheduled-$(date +%Y%m%d).html" \
+                  -d -I
+              volumeMounts:
+                - name: zap-reports
+                  mountPath: /zap/wrk
+              resources:
+                limits:
+                  memory: "2Gi"
+                  cpu: "2"
+                requests:
+                  memory: "512Mi"
+                  cpu: "500m"
+          volumes:
+            - name: zap-reports
+              persistentVolumeClaim:
+                claimName: zap-reports-pvc
+          restartPolicy: Never

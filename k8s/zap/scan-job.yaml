@@ -1,0 +1,40 @@
+# scan-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: zap-on-demand-scan
+spec:
+  template:
+    spec:
+      containers:
+        - name: zap-scanner
+          image: zaproxy/zap-stable:latest
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "Starting ZAP scan...";
+              zap-api-scan.py -t http://poc-zap-service/api \
+              -f openapi \
+              -r "/reports/on-demand-$(date +%Y%m%d-%H%M).html" \
+              -d;
+              echo "Scan completed. Report generated."
+          volumeMounts:
+            - name: reports
+              mountPath: /reports
+          env:
+            - name: ZAP_JVM_OPTIONS
+              value: "-Xmx512m -XX:ParallelGCThreads=1 -XX:+UseContainerSupport"
+            - name: ZAP_CONNECTION_TIMEOUT
+              value: "60"
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: reports
+          persistentVolumeClaim:
+            claimName: zap-reports-pvc
+      restartPolicy: Never

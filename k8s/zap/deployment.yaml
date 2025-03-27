@@ -101,4 +101,6 @@ spec:
         - name: zap-scripts
           emptyDir: {}
         - name: zap-reports
-          emptyDir: {}
+          hostPath:
+            path: /tmp/zap-reports
+            type: DirectoryOrCreate

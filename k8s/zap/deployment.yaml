@@ -9,28 +9,96 @@ spec:
   selector:
     matchLabels:
       app: zap-scanner
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         app: zap-scanner
     spec:
+      initContainers:
+        - name: wait-for-zap
+          image: busybox:1.28
+          command: ['sh', '-c', 'echo "Waiting for ZAP to start..."; sleep 45']
       containers:
         - name: zap
           image: zaproxy/zap-stable:latest
-          command: ["zap-webswing.sh"]
+          command: ["zap.sh"]
+          args:
+            - "-daemon"
+            - "-host"
+            - "0.0.0.0"
+            - "-port"
+            - "8080"
+            - "-config"
+            - "api.disablekey=true"
+            - "-config"
+            - "webui.port=8090"
+            - "-config"
+            - "api.addrs.addr.name=.*"
+            - "-config"
+            - "api.addrs.addr.regex=true"
           ports:
-            - containerPort: 8080  # Web UI
-            - containerPort: 8090  # API
+            - containerPort: 8080
+            - containerPort: 8090
+          startupProbe:
+            httpGet:
+              path: /JSON/core/view/version
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /JSON/core/view/version
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /zap/
+              path: /JSON/core/view/version
               port: 8080
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            failureThreshold: 3
+          env:
+            - name: ZAP_JVM_OPTIONS
+              value: "-Xmx512m -XX:ParallelGCThreads=1 -XX:+UseContainerSupport"
+            - name: ZAP_CONNECTION_TIMEOUT
+              value: "60"
+            - name: ZAP_STARTUP_DELAY
+              value: "30"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
           volumeMounts:
             - name: zap-session
               mountPath: /zap/session
+            - name: zap-scripts
+              mountPath: /zap/scripts
+        - name: zap-automation
+          image: zaproxy/zap-stable:latest
+          command: ["/bin/sh"]
+          args: ["-c", "sleep 90 && zap-api-scan.py -t http://poc-zap-service/api -f openapi -r /zap/wrk/report.html"]
+          volumeMounts:
+            - name: zap-session
+              mountPath: /zap/session
+            - name: zap-scripts
+              mountPath: /zap/scripts
+            - name: zap-reports
+              mountPath: /zap/wrk
       volumes:
         - name: zap-session
           persistentVolumeClaim:
             claimName: zap-session-pvc
+        - name: zap-scripts
+          emptyDir: {}
+        - name: zap-reports
+          emptyDir: {}

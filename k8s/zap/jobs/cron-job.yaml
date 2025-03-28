@@ -19,33 +19,34 @@ spec:
               securityContext:
                 runAsUser: 1000
                 runAsGroup: 1001
-              command: ["zap-api-scan.py"]
+              command: ["sh", "-c"]
               args:
-                - "-t"
-                - "http://poc-zap-service/v2/api-docs"
-                - "-f"
-                - "openapi"
-                - "-r"
-                - "/zap/wrk/scheduled-$(date +%Y%m%d).html"
-                - "-d"
-                - "-I"
-                - "-z"
-                - "-config connection.timeoutInSecs=120"
+                - |
+                  zap-api-scan.py -t http://poc-zap-service/v2/api-docs \
+                  -f openapi \
+                  -r "/zap/wrk/scheduled-$(date +%Y%m%d).html" \
+                  -d -I \
+                  -z "-config connection.timeoutInSecs=120"
               env:
                 - name: ZAP_JVM_OPTIONS
-                  value: "-Xmx2048m -XX:ParallelGCThreads=2"
+                  value: "-Xmx3072m -XX:ParallelGCThreads=2"  # 3GB heap
               resources:
                 limits:
                   memory: "4Gi"
                   cpu: "2"
                 requests:
-                  memory: "2Gi"
+                  memory: "3Gi"
                   cpu: "1"
               volumeMounts:
                 - name: reports
                   mountPath: /zap/wrk
+                - name: zap-scripts
+                  mountPath: /zap/scripts
           volumes:
             - name: reports
               persistentVolumeClaim:
                 claimName: zap-reports-pvc
+            - name: zap-scripts
+              configMap:
+                name: zap-scripts
           restartPolicy: Never

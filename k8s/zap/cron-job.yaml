@@ -11,20 +11,26 @@ spec:
     spec:
       template:
         spec:
+          securityContext:
+            fsGroup: 1001
           containers:
             - name: zap-scanner
               image: zaproxy/zap-stable:latest
+              securityContext:
+                runAsUser: 1000
+                runAsGroup: 1001
               command: ["sh", "-c"]
               args:
                 - |
                   mkdir -p /zap/wrk && \
+                  mkdir -p /usr/share/nginx/html && \
                   zap-api-scan.py -t http://poc-zap-service/api \
                   -f openapi \
-                  -r "/zap/wrk/scheduled-$(date +%Y%m%d).html" \
+                  -r "/usr/share/nginx/html/scheduled-$(date +%Y%m%d).html" \
                   -d -I
               volumeMounts:
                 - name: zap-reports
-                  mountPath: /zap/wrk
+                  mountPath: /usr/share/nginx/html
               resources:
                 limits:
                   memory: "2Gi"

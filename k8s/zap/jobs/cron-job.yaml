@@ -19,27 +19,33 @@ spec:
               securityContext:
                 runAsUser: 1000
                 runAsGroup: 1001
-              command: ["sh", "-c"]
+              command: ["zap-api-scan.py"]
               args:
-                - |
-                  mkdir -p /zap/wrk && \
-                  mkdir -p /usr/share/nginx/html && \
-                  zap-api-scan.py -t http://poc-zap-service/v2/api-docs \
-                  -f openapi \
-                  -r "/usr/share/nginx/html/scheduled-$(date +%Y%m%d).html" \
-                  -d -I
-              volumeMounts:
-                - name: zap-reports
-                  mountPath: /usr/share/nginx/html
+                - "-t"
+                - "http://poc-zap-service/v2/api-docs"
+                - "-f"
+                - "openapi"
+                - "-r"
+                - "/zap/wrk/scheduled-$(date +%Y%m%d).html"
+                - "-d"
+                - "-I"
+                - "-z"
+                - "-config connection.timeoutInSecs=120"
+              env:
+                - name: ZAP_JVM_OPTIONS
+                  value: "-Xmx2048m -XX:ParallelGCThreads=2"
               resources:
                 limits:
-                  memory: "2Gi"
+                  memory: "4Gi"
                   cpu: "2"
                 requests:
-                  memory: "512Mi"
-                  cpu: "500m"
+                  memory: "2Gi"
+                  cpu: "1"
+              volumeMounts:
+                - name: reports
+                  mountPath: /zap/wrk
           volumes:
-            - name: zap-reports
+            - name: reports
               persistentVolumeClaim:
                 claimName: zap-reports-pvc
           restartPolicy: Never

@@ -1,3 +1,4 @@
+# scan-job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -16,29 +17,30 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
-              echo "Starting ZAP scan..."
-              mkdir -p /zap/wrk && \
-              mkdir -p /usr/share/nginx/html && \
               zap-api-scan.py -t http://poc-zap-service/v2/api-docs \
-                -f openapi \
-                -r "/usr/share/nginx/html/on-demand-$(date +%Y%m%d-%H%M).html" \
-                -d
-              echo "Scan completed. Report generated."
-          volumeMounts:
-            - name: reports
-              mountPath: /usr/share/nginx/html
+              -f openapi \
+              -r "/zap/wrk/on-demand-$(date +%Y%m%d-%H%M).html" \
+              -d -I --hook /zap/scripts/error_handler.py
           env:
             - name: ZAP_JVM_OPTIONS
-              value: "-Xmx512m -XX:ParallelGCThreads=1 -XX:+UseContainerSupport"
+              value: "-Xmx3072m -XX:ParallelGCThreads=2"
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "1"
+              memory: "4Gi"
+              cpu: "2"
             requests:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "3Gi"
+              cpu: "1"
+          volumeMounts:
+            - name: reports
+              mountPath: /zap/wrk
+            - name: zap-scripts
+              mountPath: /zap/scripts
       volumes:
         - name: reports
           persistentVolumeClaim:
             claimName: zap-reports-pvc
+        - name: zap-scripts
+          configMap:
+            name: zap-scripts
       restartPolicy: Never

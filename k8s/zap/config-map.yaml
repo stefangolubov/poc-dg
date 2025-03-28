@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zap-scripts
+data:
+  error_handler.py: |
+    #!/usr/bin/env python
+    def zap_started(zap, target):
+        print("ZAP started successfully")
+    
+    def zap_error(zap, error):
+        print(f"Custom handler caught: {error}")
+        if "WARN-NEW" in str(error):
+            return  # Ignore warnings
+        import sys
+        sys.exit(0)

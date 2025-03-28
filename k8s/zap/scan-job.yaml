@@ -19,7 +19,7 @@ spec:
               echo "Starting ZAP scan..."
               mkdir -p /zap/wrk && \
               mkdir -p /usr/share/nginx/html && \
-              zap-api-scan.py -t http://poc-zap-service/api \
+              zap-api-scan.py -t http://poc-zap-service/v2/api-docs \
                 -f openapi \
                 -r "/usr/share/nginx/html/on-demand-$(date +%Y%m%d-%H%M).html" \
                 -d

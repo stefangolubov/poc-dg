@@ -20,6 +20,7 @@ spec:
               zap-api-scan.py -t http://poc-zap-service/v2/api-docs \
               -f openapi \
               -r "/zap/wrk/on-demand-$(date +%Y%m%d-%H%M).html" \
+              -J "/zap/wrk/on-demand-$(date +%Y%m%d-%H%M).json" \
               -d -I --hook /zap/scripts/error_handler.py
           env:
             - name: ZAP_JVM_OPTIONS

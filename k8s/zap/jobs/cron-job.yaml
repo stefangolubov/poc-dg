@@ -25,6 +25,7 @@ spec:
                   zap-api-scan.py -t http://poc-zap-service/v2/api-docs \
                   -f openapi \
                   -r "/zap/wrk/scheduled-$(date +%Y%m%d).html" \
+                  -J "/zap/wrk/scheduled-$(date +%Y%m%d).json" \
                   -d -I \
                   -z "-config connection.timeoutInSecs=120"
               env:

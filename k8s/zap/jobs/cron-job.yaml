@@ -22,7 +22,7 @@ spec:
               command: ["sh", "-c"]
               args:
                 - |
-                  zap-api-scan.py -t http://poc-zap-service/v2/api-docs \
+                  zap-api-scan.py -t http://poc-zap-service:80/v2/api-docs \
                   -f openapi \
                   -r "/zap/wrk/scheduled-$(date +%Y%m%d).html" \
                   -J "/zap/wrk/scheduled-$(date +%Y%m%d).json" \

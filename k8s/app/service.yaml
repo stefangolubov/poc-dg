@@ -6,6 +6,11 @@ spec:
   selector:
     app: poc-zap-app
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 9999
+    - name: api
+      protocol: TCP
       port: 9999
       targetPort: 9999

@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: burp-scan
+spec:
+  template:
+    spec:
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: dastardly
+          image: public.ecr.aws/portswigger/dastardly:latest
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1001
+          env:
+            - name: BURP_START_URL
+              value: "http://poc-zap-service:9999/api/users?id=1"
+            - name: BURP_EXTRA_URLS
+              value: |
+                http://poc-zap-service:9999/api/admin/env
+                http://poc-zap-service:9999/api/greet?username=test
+                http://poc-zap-service:9999/api/ping?host=127.0.0.1
+                http://poc-zap-service:9999/api/public
+                http://poc-zap-service:9999/api/hello?name=test
+            - name: BURP_REPORT_FILE_PATH
+              value: "/reports/burp-report.html"
+            - name: BURP_DEBUG
+              value: "true"
+          volumeMounts:
+            - name: reports
+              mountPath: /reports
+      volumes:
+        - name: reports
+          persistentVolumeClaim:
+            claimName: zap-reports-pvc
+      restartPolicy: Never

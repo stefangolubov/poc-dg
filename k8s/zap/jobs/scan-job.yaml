@@ -1,4 +1,3 @@
-# scan-job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -17,10 +16,11 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
+              mkdir -p /zap/wrk/zap && \
               zap-api-scan.py -t http://poc-zap-service:80/v2/api-docs \
               -f openapi \
-              -r "/zap/wrk/on-demand-$(date +%Y%m%d-%H%M).html" \
-              -J "/zap/wrk/on-demand-$(date +%Y%m%d-%H%M).json" \
+              -r "/zap/wrk/zap/on-demand-$(date +%Y%m%d-%H%M).html" \
+              -J "/zap/wrk/zap/on-demand-$(date +%Y%m%d-%H%M).json" \
               -d -I --hook /zap/scripts/error_handler.py
           env:
             - name: ZAP_JVM_OPTIONS

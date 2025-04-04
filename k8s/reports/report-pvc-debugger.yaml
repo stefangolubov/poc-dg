@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: report-pvc-debugger
+spec:
+  volumes:
+    - name: reports
+      persistentVolumeClaim:
+        claimName: zap-reports-pvc
+  containers:
+    - name: debugger
+      image: alpine:latest
+      command: ["tail", "-f", "/dev/null"]
+      volumeMounts:
+        - name: reports
+          mountPath: /reports

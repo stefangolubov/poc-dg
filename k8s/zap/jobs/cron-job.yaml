@@ -22,15 +22,16 @@ spec:
               command: ["sh", "-c"]
               args:
                 - |
+                  mkdir -p /zap/wrk/zap && \
                   zap-api-scan.py -t http://poc-zap-service:80/v2/api-docs \
                   -f openapi \
-                  -r "/zap/wrk/scheduled-$(date +%Y%m%d).html" \
-                  -J "/zap/wrk/scheduled-$(date +%Y%m%d).json" \
+                  -r "/zap/wrk/zap/scheduled-$(date +%Y%m%d-%H%M).html" \
+                  -J "/zap/wrk/zap/scheduled-$(date +%Y%m%d-%H%M).json" \
                   -d -I \
                   -z "-config connection.timeoutInSecs=120"
               env:
                 - name: ZAP_JVM_OPTIONS
-                  value: "-Xmx3072m -XX:ParallelGCThreads=2"  # 3GB heap
+                  value: "-Xmx3072m -XX:ParallelGCThreads=2"
               resources:
                 limits:
                   memory: "4Gi"

@@ -19,6 +19,45 @@ spec:
               securityContext:
                 runAsUser: 1000
                 runAsGroup: 1001
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  # Create directory structure
+                  mkdir -p /reports/burp
+                  
+                  # Generate timestamp
+                  TIMESTAMP=$(date +%Y%m%d-%H%M)
+                  REPORT_FILE="/reports/burp/scheduled-${TIMESTAMP}.html"
+                  
+                  # Find the actual location of dastardly executable
+                  DASTARDLY_PATH=$(find / -name dastardly -type f -executable 2>/dev/null | head -n 1)
+                  
+                  if [ -z "$DASTARDLY_PATH" ]; then
+                    echo "Error: dastardly executable not found in container"
+                    exit 1
+                  fi
+                  
+                  echo "Found dastardly at: $DASTARDLY_PATH"
+                  
+                  # Set required environment variables
+                  export BURP_REPORT_FILE_PATH="$REPORT_FILE"
+                  export BURP_START_URL="$BURP_START_URL"
+                  export BURP_EXTRA_URLS="$BURP_EXTRA_URLS"
+                  export BURP_DEBUG="true"
+                  
+                  # Run scan with the found executable path
+                  "$DASTARDLY_PATH"
+                  
+                  # Verify report was created
+                  if [ -f "$REPORT_FILE" ]; then
+                    echo "Success: Report generated at $REPORT_FILE"
+                    ls -la /reports/burp/
+                    exit 0
+                  else
+                    echo "Error: Failed to generate report"
+                    ls -la /reports/
+                    exit 1
+                  fi
               env:
                 - name: BURP_START_URL
                   value: "http://poc-zap-service:9999/api/users?id=1"
@@ -29,10 +68,6 @@ spec:
                     http://poc-zap-service:9999/api/ping?host=127.0.0.1
                     http://poc-zap-service:9999/api/public
                     http://poc-zap-service:9999/api/hello?name=test
-                - name: BURP_REPORT_FILE_PATH
-                  value: "/reports/scheduled-burp-report.html"
-                - name: BURP_DEBUG
-                  value: "true"
               volumeMounts:
                 - name: reports
                   mountPath: /reports

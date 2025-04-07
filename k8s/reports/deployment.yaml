@@ -35,7 +35,7 @@ spec:
               
               # Count vulnerabilities
               ZAP_COUNT=$([ -n "$LATEST_ZAP" ] && jq '.site[0].alerts | length' "$LATEST_ZAP" || echo 0)
-              BURP_COUNT=$([ -n "$LATEST_BURP" ] && grep -c 'issue-type' "$LATEST_BURP" || echo 0)
+              BURP_COUNT=$([ -n "$LATEST_BURP" ] && grep -c 'failure message' "$LATEST_BURP" || echo 0)
               
               # Generate comparison JSON
               cat > /usr/share/nginx/html/comparison.json <<COMP_EOF

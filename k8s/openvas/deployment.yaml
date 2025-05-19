@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openvas-scanner
+  labels:
+    app: openvas-scanner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openvas-scanner
+  template:
+    metadata:
+      labels:
+        app: openvas-scanner
+    spec:
+      containers:
+        - name: openvas-scanner
+          image: sviskontree/openvas
+          ports:
+            - containerPort: 9392
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
+            limits:
+              memory: "4Gi"
+              cpu: "2"

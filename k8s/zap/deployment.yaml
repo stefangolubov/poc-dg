@@ -30,6 +30,10 @@ spec:
             - "api.addrs.addr.name=.*"
             - "-config"
             - "api.addrs.addr.regex=true"
+            - "-config"
+            - "script.defaultEngine=ECMAScript"
+            - "-config"
+            - "scripts.console=true"
           ports:
             - containerPort: 8080
           env:
@@ -37,6 +41,8 @@ spec:
               value: "-Xmx2048m -XX:ParallelGCThreads=2"
             - name: ZAP_CONNECTION_TIMEOUT
               value: "120"
+            - name: ZAP_SCRIPT_DIRS
+              value: "/zap/scripts:/zap/scripts/custom_tests"
           resources:
             requests:
               memory: "2Gi"
@@ -47,7 +53,17 @@ spec:
           volumeMounts:
             - name: zap-reports
               mountPath: /zap/wrk
+            - name: zap-scripts
+              mountPath: /zap/scripts
+            - name: custom-tests
+              mountPath: /zap/scripts/custom_tests
       volumes:
         - name: zap-reports
           persistentVolumeClaim:
             claimName: zap-reports-pvc
+        - name: zap-scripts
+          configMap:
+            name: zap-scripts
+        - name: custom-tests
+          configMap:
+            name: custom-pen-tests

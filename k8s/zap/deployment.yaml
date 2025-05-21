@@ -53,7 +53,7 @@ spec:
           volumeMounts:
             - name: zap-reports
               mountPath: /zap/wrk
-            - name: zap-scripts
+            - name: zap-scripts-pentest
               mountPath: /zap/scripts
             - name: custom-tests
               mountPath: /zap/scripts/custom_tests
@@ -61,9 +61,9 @@ spec:
         - name: zap-reports
           persistentVolumeClaim:
             claimName: zap-reports-pvc
-        - name: zap-scripts
+        - name: zap-scripts-pentest
           configMap:
-            name: zap-scripts
+            name: zap-scripts-pentest
         - name: custom-tests
           configMap:
             name: custom-pen-tests

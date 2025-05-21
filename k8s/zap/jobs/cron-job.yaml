@@ -15,7 +15,7 @@ spec:
             fsGroup: 1001
           containers:
             - name: zap-scanner
-              image: owasp/zap2docker-stable:latest
+              image: zaproxy/zap-stable:latest
               securityContext:
                 runAsUser: 1000
                 runAsGroup: 1001

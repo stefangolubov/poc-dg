@@ -1,13 +1,12 @@
 # Kubernetes Security Scanning Demo
 
-This project demonstrates a security scanning setup with ZAP and Burp Suite scanners running against a vulnerable demo application in Kubernetes. The infrastructure includes scheduled and on-demand scans, report storage, and a report viewer.
+This project demonstrates a security scanning setup with ZAP scanner running against a vulnerable demo application in Kubernetes. The infrastructure includes scheduled and on-demand scans, report storage, and a report viewer.
 
 ## Architecture Overview
 
 1. **Vulnerable App**: Spring Boot application (`poc-zap-app`)
-2. **Scanners**:
+2. **Scanner**:
     - OWASP ZAP (scheduled and on-demand scans)
-    - Burp Suite (scheduled and on-demand scans)
 3. **Report Viewer**: NGINX web server with automated report comparison
 4. **Storage**: Persistent volume for scan reports
 
@@ -26,17 +25,11 @@ This project demonstrates a security scanning setup with ZAP and Burp Suite scan
     - Scheduled daily scan at 2 AM
     - On-demand scan job
     - API scanning mode using OpenAPI spec
-- **Burp Suite**:
-    - Scheduled daily scan at 3 AM
-    - On-demand scan job
-    - Web UI scanning mode
 
 ### 3. Reporting
 - Persistent volume (5GB) for storing reports
 - Report viewer with:
     - Directory listing of all reports
-    - Automated comparison of latest ZAP/Burp reports
-    - JSON endpoint for vulnerability counts
 
 ## Deployment Commands
 
@@ -62,11 +55,7 @@ kubectl apply -f config-map.yaml
 kubectl apply -f zap-cron-job.yaml
 kubectl apply -f zap-pentest-job.yaml
 
-# 6. Deploy Burp scan jobs
-kubectl apply -f burp-scheduled-scan.yaml
-kubectl apply -f burp-scan-job.yaml
-
-# 7. Deploy the report viewer
+# 6. Deploy the report viewer
 kubectl apply -f report-viewer-deployment.yaml
 kubectl apply -f report-viewer-service.yaml
 ```
@@ -107,31 +96,7 @@ These vulnerable endpoints are available for scanning:
 # Run ZAP scan
 kubectl create job --from=cronjob/zap-scheduled-scan zap-manual-scan
 
-# Run Burp scan
-kubectl create job --from=cronjob/burp-scheduled-scan burp-manual-scan
 ```
-
-### Report Comparison Features
-
-The report viewer automatically:
-1. Lists all scan reports with timestamps
-2. Compares latest ZAP and Burp results
-3. Provides vulnerability counts via JSON API:
-
-```json
-{
-  "timestamp": "2023-07-20T15:30:45+00:00",
-  "reports": {
-    "zap": "scheduled-20230720.json",
-    "burp": "burp-report-20230720.html"
-  },
-  "vulnerabilities": {
-    "zap": 12,
-    "burp": 8
-  }
-}
-```
-
 ## Configuration Details
 
 ### Scanner Settings
@@ -139,13 +104,11 @@ The report viewer automatically:
 | Scanner   | Image                                      | Schedule    | Resource Limits       | Scan Type           |
 |-----------|--------------------------------------------|-------------|-----------------------|---------------------|
 | ZAP       | zaproxy/zap-stable                         | 2 AM daily  | 4Gi RAM, 2 CPU        | API Scan (OpenAPI)  |
-| Burp Suite| public.ecr.aws/portswigger/dastardly       | 3 AM daily  | 4Gi RAM, 2 CPU        | Web UI Scan         |
 
 ### Resource Allocation
 
 | Component       | CPU Requests | CPU Limits | Memory Requests | Memory Limits |
 |-----------------|--------------|------------|-----------------|---------------|
-| ZAP Scanner     | 1            | 2          | 3Gi             | 4Gi           |
-| Burp Scanner    | 1            | 2          | 3Gi             | 4Gi           |
+| ZAP Scanner     | 1            | 2          | 3Gi             | 4Gi           | 
 | Vulnerable App  | Default      | Default    | Default         | Default       |
 | Report Viewer   | Default      | Default    | Default         | Default       |

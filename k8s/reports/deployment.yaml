@@ -97,4 +97,4 @@ spec:
       volumes:
         - name: reports
           persistentVolumeClaim:
-            claimName: zap-reports-pvc
+            claimName: reports-pvc

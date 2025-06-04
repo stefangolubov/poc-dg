@@ -60,7 +60,7 @@ kubectl apply -f config-map.yaml
 
 # 5. Deploy ZAP scan jobs
 kubectl apply -f zap-cron-job.yaml
-kubectl apply -f zap-scan-job.yaml
+kubectl apply -f zap-pentest-job.yaml
 
 # 6. Deploy Burp scan jobs
 kubectl apply -f burp-scheduled-scan.yaml

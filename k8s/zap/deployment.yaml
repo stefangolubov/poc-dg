@@ -60,7 +60,7 @@ spec:
       volumes:
         - name: zap-reports
           persistentVolumeClaim:
-            claimName: zap-reports-pvc
+            claimName: reports-pvc
         - name: zap-scripts-pentest
           configMap:
             name: zap-scripts-pentest

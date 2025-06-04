@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: newman-collection-job
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      securityContext:
+        fsGroup: 1001
+      containers:
+        - name: newman
+          image: postman/newman:alpine
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1001
+          command: ["sh", "-c"]
+          args:
+            - |
+              mkdir -p /reports/newman && \
+              timestamp=$(date +%Y%m%d-%H%M) && \
+              json="/reports/newman/newman-report-${timestamp}.json" && \
+              junit="/reports/newman/newman-report-${timestamp}.xml" && \
+              newman run /newman/config/collection.json \
+                --reporters cli,json,junit \
+                --reporter-json-export "$json" \
+                --reporter-junit-export "$junit"; \
+              CODE=$?; \
+              echo "Newman exited with code $CODE"; \
+              exit 0
+          volumeMounts:
+            - name: newman-config
+              mountPath: /newman/config
+              readOnly: true
+            - name: reports
+              mountPath: /reports
+      restartPolicy: Never
+      volumes:
+        - name: newman-config
+          hostPath:
+            path: "/mnt/d/DEV/Postman/"
+            type: Directory
+        - name: reports
+          persistentVolumeClaim:
+            claimName: reports-pvc

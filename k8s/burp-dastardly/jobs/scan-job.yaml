@@ -3,6 +3,7 @@ kind: Job
 metadata:
   name: burp-on-demand-scan
 spec:
+  ttlSecondsAfterFinished: 300
   template:
     spec:
       securityContext:
@@ -68,5 +69,5 @@ spec:
       volumes:
         - name: reports
           persistentVolumeClaim:
-            claimName: zap-reports-pvc
+            claimName: reports-pvc
       restartPolicy: Never

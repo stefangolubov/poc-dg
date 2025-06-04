@@ -9,7 +9,7 @@ spec:
       securityContext:
         fsGroup: 1001
       containers:
-        - name: zap-scanner
+        - name: zap-was-scanner
           image: zaproxy/zap-stable:latest
           securityContext:
             runAsUser: 1000

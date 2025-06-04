@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: zap-scanner
+  name: zap-was-scanner
   labels:
-    app: zap-scanner
+    app: zap-was-scanner
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: zap-scanner
+      app: zap-was-scanner
   template:
     metadata:
       labels:
-        app: zap-scanner
+        app: zap-was-scanner
     spec:
       containers:
         - name: zap
@@ -30,10 +30,6 @@ spec:
             - "api.addrs.addr.name=.*"
             - "-config"
             - "api.addrs.addr.regex=true"
-            - "-config"
-            - "script.defaultEngine=ECMAScript"
-            - "-config"
-            - "scripts.console=true"
           ports:
             - containerPort: 8080
           env:
@@ -41,8 +37,6 @@ spec:
               value: "-Xmx2048m -XX:ParallelGCThreads=2"
             - name: ZAP_CONNECTION_TIMEOUT
               value: "120"
-            - name: ZAP_SCRIPT_DIRS
-              value: "/zap/scripts:/zap/scripts/custom_tests"
           resources:
             requests:
               memory: "2Gi"
@@ -53,17 +47,7 @@ spec:
           volumeMounts:
             - name: zap-reports
               mountPath: /zap/wrk
-            - name: zap-scripts-pentest
-              mountPath: /zap/scripts
-            - name: custom-tests
-              mountPath: /zap/scripts/custom_tests
       volumes:
         - name: zap-reports
           persistentVolumeClaim:
             claimName: reports-pvc
-        - name: zap-scripts-pentest
-          configMap:
-            name: zap-scripts-pentest
-        - name: custom-tests
-          configMap:
-            name: custom-pen-tests

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zap-was-scanner
+  labels:
+    app: zap-was-scanner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zap-was-scanner
+  template:
+    metadata:
+      labels:
+        app: zap-was-scanner
+    spec:
+      containers:
+        - name: zap
+          image: zaproxy/zap-stable:latest
+          command: ["zap.sh"]
+          args:
+            - "-daemon"
+            - "-host"
+            - "0.0.0.0"
+            - "-port"
+            - "8080"
+            - "-config"
+            - "api.disablekey=true"
+            - "-config"
+            - "api.addrs.addr.name=.*"
+            - "-config"
+            - "api.addrs.addr.regex=true"
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ZAP_JVM_OPTIONS
+              value: "-Xmx2048m -XX:ParallelGCThreads=2"
+            - name: ZAP_CONNECTION_TIMEOUT
+              value: "120"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
+          volumeMounts:
+            - name: zap-reports
+              mountPath: /zap/wrk
+      volumes:
+        - name: zap-reports
+          persistentVolumeClaim:
+            claimName: reports-pvc

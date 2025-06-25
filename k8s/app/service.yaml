@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: poc-zap-service
+spec:
+  selector:
+    app: poc-zap-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 9999
+    - name: api
+      protocol: TCP
+      port: 9999
+      targetPort: 9999

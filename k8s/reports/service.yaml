@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: report-service
+spec:
+  type: NodePort
+  selector:
+    app: report-viewer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      # NodePort (30000-32767)
+      nodePort: 30080

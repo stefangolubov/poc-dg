@@ -14,5 +14,9 @@ spec:
       targetPort: 5000
       nodePort: 30500
       name: docker
+    - port: 5002
+      targetPort: 5002
+      nodePort: 30502
+      name: docker-app
   selector:
     app: nexus

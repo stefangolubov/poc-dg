@@ -45,7 +45,7 @@ jobs:
 
       - name: Extract registry host:port
         id: registry
-        shell: pwsh
+        shell: powershell
         run: |
           $hostport = $env:NEXUS_REPO_URL.Split('/')[0]
           Add-Content -Path $env:GITHUB_OUTPUT -Value "HOSTPORT=$hostport"

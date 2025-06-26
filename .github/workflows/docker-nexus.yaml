@@ -66,7 +66,7 @@ jobs:
       - name: Download Trivy CLI
         shell: powershell
         run: |
-          $trivyVersion = "0.48.4"
+          $trivyVersion = "0.63.0"
           $trivyZip = "trivy_${trivyVersion}_Windows-64bit.zip"
           $trivyUrl = "https://github.com/aquasecurity/trivy/releases/download/v${trivyVersion}/$trivyZip"
           Invoke-WebRequest -Uri $trivyUrl -OutFile $trivyZip

@@ -60,7 +60,7 @@ jobs:
           docker build -t "${NEXUS_REPO_URL}/${IMAGE_NAME}:${IMAGE_TAG}" .
 
       - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@latest
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           image-ref: "${{ env.NEXUS_REPO_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
           severity: 'CRITICAL,HIGH'

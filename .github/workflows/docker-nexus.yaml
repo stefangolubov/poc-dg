@@ -63,14 +63,25 @@ jobs:
           $tag = "${env:NEXUS_REPO_URL}/${env:IMAGE_NAME}:${env:IMAGE_TAG}"
           docker build -t "$tag" .
 
+      - name: Download Trivy CLI
+        shell: powershell
+        run: |
+          $trivyVersion = "0.48.4"
+          $trivyZip = "trivy_${trivyVersion}_Windows-64bit.zip"
+          $trivyUrl = "https://github.com/aquasecurity/trivy/releases/download/v${trivyVersion}/$trivyZip"
+          Invoke-WebRequest -Uri $trivyUrl -OutFile $trivyZip
+          Expand-Archive $trivyZip -DestinationPath "$PWD\trivy"
+          $env:PATH += ";$PWD\trivy"
+
       - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@0.31.0
-        with:
-          image-ref: "${{ env.NEXUS_REPO_URL }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
-          severity: 'CRITICAL,HIGH'
-          exit-code: '1'
+        shell: powershell
+        run: |
+          $tag = "${env:NEXUS_REPO_URL}/${env:IMAGE_NAME}:${env:IMAGE_TAG}"
+          .\trivy\trivy.exe image --severity CRITICAL,HIGH --exit-code 1 $tag
 
       - name: Push Docker image to Nexus
         if: ${{ success() }}
+        shell: powershell
         run: |
-          docker push "${NEXUS_REPO_URL}/${IMAGE_NAME}:${IMAGE_TAG}"
+          $tag = "${env:NEXUS_REPO_URL}/${env:IMAGE_NAME}:${env:IMAGE_TAG}"
+          docker push "$tag"

@@ -45,8 +45,10 @@ jobs:
 
       - name: Extract registry host:port
         id: registry
+        shell: pwsh
         run: |
-          echo "HOSTPORT=$(echo $NEXUS_REPO_URL | cut -d/ -f1)" >> $GITHUB_OUTPUT
+          $hostport = $env:NEXUS_REPO_URL.Split('/')[0]
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "HOSTPORT=$hostport"
 
       - name: Log in to Nexus Docker registry
         uses: docker/login-action@v3

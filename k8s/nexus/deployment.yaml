@@ -18,7 +18,8 @@ spec:
           image: sonatype/nexus3:latest
           ports:
             - containerPort: 8081
-            - containerPort: 5000 # Docker registry
+            - containerPort: 5001 # Docker registry for docker-base-images repo
+            - containerPort: 5002 # Docker registry for docker-app-images repo
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data

@@ -9,12 +9,13 @@ This repository contains Kubernetes manifests for deploying Sonatype Nexus 3 as 
 - [Prerequisites](#prerequisites)
 - [Kubernetes Deployment](#kubernetes-deployment)
 - [Initial Nexus Setup](#initial-nexus-setup)
+- [Nexus Roles, Users, and Privileges](#nexus-roles-users-and-privileges)
 - [Configuring Docker with Rancher Desktop (Windows)](#configuring-docker-with-rancher-desktop-windows)
 - [GitHub Actions CI/CD Integration](#github-actions-cicd-integration)
     - [Workflow Prerequisites](#workflow-prerequisites)
-    - [How the Workflow Works](#how-the-workflow-works)
+    - [Available Workflows](#available-workflows)
+    - [Flow Use Cases](#flow-use-cases)
     - [Workflow Steps Explained](#workflow-steps-explained)
-- [Using the `scan-and-push.sh` Script](#using-the-scan-and-pushsh-script)
 - [Troubleshooting](#troubleshooting)
 - [References](#references)
 
@@ -22,12 +23,12 @@ This repository contains Kubernetes manifests for deploying Sonatype Nexus 3 as 
 
 ## Prerequisites
 
-- **Kubernetes cluster:** minikube, Rancher Desktop, or cloud provider
+- **Kubernetes cluster**: minikube, Rancher Desktop, or cloud provider
 - **kubectl** installed and configured
 - **[Rancher Desktop](https://rancherdesktop.io/)** (if running locally on Windows)
 - **Docker** (with access to your Kubernetes cluster)
-- **Maven** for Java build
-- **Trivy** for image scanning (CLI or via GitHub Actions)
+- **Maven** for Java builds
+- **Trivy** for image scanning (via CLI or GitHub Actions)
 - **GitHub account** with repository access
 
 ---
@@ -51,27 +52,65 @@ kubectl apply -f service.yaml
 
 1. **Access Nexus UI:** Open `http://<node-ip>:30081` in your browser.
 2. **Login:** Default credentials are `admin` / `admin123` (or see `/nexus-data/admin.password`).
-3. **Create a Docker (hosted) repository:**
+3. **Create Docker (hosted) repositories:**
     - Go to **Settings → Repositories → Create repository**
     - Select **docker (hosted)**
-    - Set a name (e.g., `myrepo`)
-    - Ensure the HTTP port matches your service (default: 5000)
+    - Create two repositories:
+        - `docker-app-images` (port 5002)
+        - `docker-base-images` (port 5001)
+    - Set the HTTP port for each repo to match your Kubernetes service NodePorts.
+    - Set deployment policy to **Allow redeploy** for both.
     - Save
+
+---
+
+## Nexus Roles, Users, and Privileges
+
+> **It is critical to configure Nexus roles and privileges correctly for secure CI/CD.**
+
+### **Roles**
+
+#### `docker-admins`
+For administrators; full access to both repos.
+
+- `nx-repository-view-docker-docker-app-images-*`
+- `nx-repository-view-docker-docker-base-images-*`
+
+#### `docker-devs`
+For CI/CD bots and developers; push access to app images, read-only for base images.
+
+- `nx-repository-view-docker-docker-app-images-add`
+- `nx-repository-view-docker-docker-app-images-browse`
+- `nx-repository-view-docker-docker-app-images-edit`
+- `nx-repository-view-docker-docker-app-images-read`
+- `nx-repository-view-docker-docker-base-images-read`
+
+### **Users**
+
+- `ci-admin` — assigned to `docker-admins`
+- `ci-bot` — assigned to `docker-devs`
+
+### **Repository-to-Port Mapping**
+
+| Repository Name      | Type    | NodePort | Used By           |
+|----------------------|---------|----------|-------------------|
+| docker-app-images    | hosted  | 30502    | app images, CI/CD |
+| docker-base-images   | hosted  | 30501    | base images only  |
 
 ---
 
 ## Configuring Docker with Rancher Desktop (Windows)
 
-If using **Rancher Desktop** on Windows, configure Docker to trust your local Nexus registry (as an "insecure" registry):
+If using **Rancher Desktop** on Windows, configure Docker to trust your local Nexus registry as an "insecure" registry:
 
 1. Open a terminal and run:
     ```sh
     wsl -d rancher-desktop
     ```
-2. Edit `/etc/docker/daemon.json`, adding your Nexus NodePort registry (e.g., `192.168.127.2:30500`):
+2. Edit `/etc/docker/daemon.json`, adding your Nexus NodePort registries (e.g., `192.168.127.2:30501`, `192.168.127.2:30502`):
     ```json
     {
-      "insecure-registries": ["192.168.127.2:30500"]
+      "insecure-registries": ["192.168.127.2:30501", "192.168.127.2:30502"]
     }
     ```
 3. Restart Rancher Desktop.
@@ -80,56 +119,70 @@ If using **Rancher Desktop** on Windows, configure Docker to trust your local Ne
 
 ## GitHub Actions CI/CD Integration
 
-This repository includes a GitHub Actions workflow to automate CI/CD with secure image scanning **before** pushing to your Nexus registry.
+This repository includes three GitHub Actions workflows for CI/CD scenarios, all with Trivy image scanning before push.
 
 ### Workflow Prerequisites
 
 - **GitHub Secrets:**  
   In your repository, go to **Settings → Secrets and variables → Actions** and add:
-    - `NEXUS_USERNAME`: Nexus user with permission to push images
-    - `NEXUS_PASSWORD`: Password for the above user
+    - `NEXUS_ADMIN_USERNAME`, `NEXUS_ADMIN_PASSWORD` — for admin automation
+    - `NEXUS_CI_BOT_USERNAME`, `NEXUS_CI_BOT_PASSWORD` — for CI/CD bot automation
 
 - **Self-hosted Runner:**  
   Because Windows with Rancher Desktop's Docker engine is not available in GitHub-hosted runners, you need to:
     1. [Download and configure a GitHub Actions runner](https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners).
     2. **Install the runner as your regular (interactive) user** (not as `Administrator`, `Local System`, or `Network Service`).
-        - Do **not** run the runner as a service unless you know how to grant Docker pipe access.
     3. Start Rancher Desktop as your user and ensure `docker version` works in the same terminal as the runner.
     4. From that terminal, start the runner with `run.cmd`.
 
 ---
 
-### How the Workflow Works
+### Available Workflows
 
-The workflow is triggered manually with parameters:
-- Nexus repository URL (e.g., `192.168.127.2:30500/myrepo`)
-- Docker image name
-- Docker image tag
+#### **1. Admin - Build, Scan, and Push Docker Image to Nexus**
 
-The workflow will:
-1. **Checkout code**
-2. **Set up JDK**
-3. **Build Java app with Maven**
-4. **Set up Docker Buildx**
-5. **Extract the Docker registry hostname and port**
-6. **Log in to the Nexus Docker registry**
-7. **Build the Docker image (PowerShell variable interpolation is used for Windows)**
-8. **Download and run Trivy CLI to scan the image**
-    - The image is blocked from being pushed if critical/high vulnerabilities are found.
-9. **Push Docker image to Nexus**
+- **User:** `ci-admin` (full privileges)
+- **Can push to:** both `docker-app-images` (30502) and `docker-base-images` (30501)
+- **Secrets:** `NEXUS_ADMIN_USERNAME`, `NEXUS_ADMIN_PASSWORD`
+
+#### **2. CI/CD - Build, Scan, and Push Docker Image to Nexus**
+
+- **User:** `ci-bot` (developer privileges)
+- **Can push to:** `docker-app-images` (30502) only
+- **Secrets:** `NEXUS_CI_BOT_USERNAME`, `NEXUS_CI_BOT_PASSWORD`
+- **Cannot push to:** `docker-base-images` (30501) — will receive unauthorized error (by design)
+
+#### **3. Manual - Build, Scan, and Push Docker Image to Nexus (Per-user Login)**
+
+- **User:** Prompts for Nexus username and password as workflow inputs
+- **Use case:** Ad-hoc, testing, onboarding, or per-user auditing
+- **Can push to:** whichever repo the credentials permit
+
+---
+
+### Flow Use Cases
+
+| Workflow    | Intended User      | Push Target(s)        | Use Case                                                            |
+|-------------|-------------------|-----------------------|---------------------------------------------------------------------|
+| Admin       | ci-admin          | base & app images     | Admin/maintenance, base image updates                               |
+| CI/CD       | ci-bot            | app images only       | Automated builds, production CI/CD                                  |
+| Manual      | Any user          | app or base images    | Manual pushes, onboarding, troubleshooting, per-user auditing       |
+
+- **ci-bot** cannot push to base images (enforced by Nexus roles).
+- All workflows block the push if Trivy finds CRITICAL/HIGH vulnerabilities.
 
 ---
 
 ### Workflow Steps Explained
 
 - **Parameter Inputs:**  
-  Allows you to specify the Nexus registry URL, image name, and tag when triggering the workflow.
+  Each workflow allows you to specify the Nexus registry URL, image name, and tag (and, for manual flow, Nexus credentials).
 
 - **Secrets Management:**  
-  Docker registry credentials are securely accessed via GitHub secrets.
+  Docker registry credentials are securely accessed via GitHub secrets (or as workflow input for manual flow).
 
 - **Self-hosted Runner:**  
-  Ensures the workflow runs in your environment with access to the correct Docker daemon (Rancher Desktop).
+  Ensures the workflow runs in your environment with access to Rancher Desktop's Docker daemon.
 
 - **Trivy Scanning:**  
   The workflow downloads Trivy and scans the built image. If any critical/high vulnerabilities are found, the workflow fails and the image is **not pushed**.
@@ -142,23 +195,19 @@ The workflow will:
 
 ---
 
-## Using the `scan-and-push.sh` Script
-
-This script automates building, scanning, and pushing from your local machine.  
-See details in the [original instructions above](#using-the-scan-and-pushsh-script).
-
----
-
 ## Troubleshooting
 
 - **Image push fails / `no basic auth credentials`:**
     - Make sure you are logged in to the registry (`docker login <registry-host:port>`) and your Docker daemon trusts the registry.
+    - Ensure the correct Nexus user/role is used for the correct repo/port.
 - **Trivy not found:**
     - The workflow downloads and runs Trivy CLI automatically. For local use, install [Trivy](https://aquasecurity.github.io/trivy/).
 - **Runner cannot access Docker:**
     - The runner must be started by your regular user (not as a service), and Rancher Desktop must be running in that user session.
 - **GitHub workflow fails at Bash-specific steps:**
     - All steps are adapted for PowerShell—do not use Bash syntax in Windows runner steps.
+- **Unauthorized on push to 30501 with ci-bot:**
+    - This is expected if the user/role doesn't have `add`/`edit` on `docker-base-images`.
 
 ---
 
@@ -173,5 +222,6 @@ See details in the [original instructions above](#using-the-scan-and-pushsh-scri
 
 ## Additional Notes
 
-- For advanced workflow customization or multi-stage builds, refer to the `.github/workflows/docker-nexus.yml` file.
-- If you wish to document CI/CD specifics in more detail, consider adding a `README.md` inside `.github/workflows/`.
+- The previously used port 30500/5000 and associated repo/config are no longer required and have been removed from manifests and flows.
+- For advanced workflow customization or multi-stage builds, refer to the `.github/workflows/` directory.
+- All flows are compatible with Windows self-hosted runners using PowerShell and Rancher Desktop Docker engine.

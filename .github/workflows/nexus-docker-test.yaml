@@ -1,0 +1,29 @@
+name: Nexus Docker Push Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Tag'
+        required: true
+        type: string
+
+jobs:
+  test-push:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Nexus Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: 192.168.127.2:30502
+          username: ${{ secrets.NEXUS_CI_BOT_USERNAME }}
+          password: ${{ secrets.NEXUS_CI_BOT_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -t 192.168.127.2:30502/poc-dg:${{ github.event.inputs.image_tag }} .
+
+      - name: Push Docker image to Nexus
+        run: docker push 192.168.127.2:30502/poc-dg:${{ github.event.inputs.image_tag }}

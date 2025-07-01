@@ -121,6 +121,25 @@ If using **Rancher Desktop** on Windows, configure Docker to trust your local Ne
 
 This repository includes three GitHub Actions workflows for CI/CD scenarios, all with Trivy image scanning before push.
 
+### 🗂 **Workflow Enhancements**
+
+#### **Trivy CLI Caching (applies to all workflows)**
+
+All workflows now use a persistent Trivy CLI cache stored on the self-hosted runner (by default at `C:/trivy-cache`).
+- **On the first run:** Trivy is downloaded and cached.
+- **On subsequent runs:** The cached Trivy binary is reused, speeding up workflow execution.
+
+No manual steps are required; the workflow will create and manage the cache automatically.
+
+#### **Vulnerability Push Override (applies to Admin workflow only)**
+
+The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now supports an optional input:
+- `allow_push_on_vulnerabilities`: If set to `true`, allows admins to push Docker images **even when Trivy finds CRITICAL or HIGH vulnerabilities**.
+    - **Default:** `false` (push is blocked if vulnerabilities found)
+    - **Use with caution:** This should only be enabled by trusted users and is logged in the workflow run for auditability.
+
+---
+
 ### Workflow Prerequisites
 
 - **GitHub Secrets:**  
@@ -144,6 +163,9 @@ This repository includes three GitHub Actions workflows for CI/CD scenarios, all
 - **User:** `ci-admin` (full privileges)
 - **Can push to:** both `docker-app-images` (30502) and `docker-base-images` (30501)
 - **Secrets:** `NEXUS_ADMIN_USERNAME`, `NEXUS_ADMIN_PASSWORD`
+- **Trivy cache:** Used for fast Trivy CLI startup
+- **`allow_push_on_vulnerabilities` input:**
+    - Set to `true` to allow pushing images with vulnerabilities (use with caution).
 
 #### **2. CI/CD - Build, Scan, and Push Docker Image to Nexus**
 
@@ -151,12 +173,14 @@ This repository includes three GitHub Actions workflows for CI/CD scenarios, all
 - **Can push to:** `docker-app-images` (30502) only
 - **Secrets:** `NEXUS_CI_BOT_USERNAME`, `NEXUS_CI_BOT_PASSWORD`
 - **Cannot push to:** `docker-base-images` (30501) — will receive unauthorized error (by design)
+- **Trivy cache:** Used for fast Trivy CLI startup
 
 #### **3. Manual - Build, Scan, and Push Docker Image to Nexus (Per-user Login)**
 
 - **User:** Prompts for Nexus username and password as workflow inputs
 - **Use case:** Ad-hoc, testing, onboarding, or per-user auditing
 - **Can push to:** whichever repo the credentials permit
+- **Trivy cache:** Used for fast Trivy CLI startup
 
 ---
 
@@ -169,14 +193,15 @@ This repository includes three GitHub Actions workflows for CI/CD scenarios, all
 | Manual      | Any user          | app or base images    | Manual pushes, onboarding, troubleshooting, per-user auditing       |
 
 - **ci-bot** cannot push to base images (enforced by Nexus roles).
-- All workflows block the push if Trivy finds CRITICAL/HIGH vulnerabilities.
+- All workflows block the push if Trivy finds CRITICAL/HIGH vulnerabilities, **except for Admin workflow if `allow_push_on_vulnerabilities` is set to `true`**.
 
 ---
 
 ### Workflow Steps Explained
 
 - **Parameter Inputs:**  
-  Each workflow allows you to specify the Nexus registry URL, image name, and tag (and, for manual flow, Nexus credentials).
+  Each workflow allows you to specify the Nexus registry URL, image name, and tag (and, for manual flow, Nexus credentials).  
+  **Admin workflow** also allows you to set `allow_push_on_vulnerabilities`.
 
 - **Secrets Management:**  
   Docker registry credentials are securely accessed via GitHub secrets (or as workflow input for manual flow).
@@ -184,11 +209,12 @@ This repository includes three GitHub Actions workflows for CI/CD scenarios, all
 - **Self-hosted Runner:**  
   Ensures the workflow runs in your environment with access to Rancher Desktop's Docker daemon.
 
-- **Trivy Scanning:**  
-  The workflow downloads Trivy and scans the built image. If any critical/high vulnerabilities are found, the workflow fails and the image is **not pushed**.
+- **Trivy Scanning and Caching:**  
+  The workflow downloads Trivy to a persistent cache (`C:/trivy-cache`) and scans the built image.
+    - If any critical/high vulnerabilities are found, the workflow fails and the image is **not pushed** (unless explicitly overridden in the Admin workflow).
 
 - **Push on Success:**  
-  The image is only pushed if all previous steps succeed.
+  The image is only pushed if all previous steps succeed (or if override is enabled in Admin workflow).
 
 - **PowerShell Adaptation:**  
   All shell commands needing environment variable interpolation are written for PowerShell compatibility on Windows.
@@ -201,7 +227,7 @@ This repository includes three GitHub Actions workflows for CI/CD scenarios, all
     - Make sure you are logged in to the registry (`docker login <registry-host:port>`) and your Docker daemon trusts the registry.
     - Ensure the correct Nexus user/role is used for the correct repo/port.
 - **Trivy not found:**
-    - The workflow downloads and runs Trivy CLI automatically. For local use, install [Trivy](https://aquasecurity.github.io/trivy/).
+    - The workflow downloads and caches Trivy CLI automatically. For local use, install [Trivy](https://aquasecurity.github.io/trivy/).
 - **Runner cannot access Docker:**
     - The runner must be started by your regular user (not as a service), and Rancher Desktop must be running in that user session.
 - **GitHub workflow fails at Bash-specific steps:**

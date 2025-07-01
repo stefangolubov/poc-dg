@@ -101,7 +101,7 @@ jobs:
           $trivyCacheDir = "C:/trivy-cache/$env:TRIVY_VERSION"
           $env:PATH += ";$trivyCacheDir"
           $tag = "${env:NEXUS_REPO_URL}/${env:IMAGE_NAME}:${env:IMAGE_TAG}"
-          & "$env:TRIVY_CACHE_DIR\trivy.exe" image --scanners vuln,secret --severity CRITICAL,HIGH --exit-code 1 $tag
+          & "$trivyCacheDir\trivy.exe" image --scanners vuln,secret --severity CRITICAL,HIGH --exit-code 1 $tag
         continue-on-error: true
 
       - name: Warn if vulnerabilities found (and allow override)

@@ -35,7 +35,8 @@ jobs:
       NEXUS_USERNAME: ${{ github.event.inputs.nexus_username }}
       NEXUS_PASSWORD: ${{ github.event.inputs.nexus_password }}
       TRIVY_VERSION: "0.63.0"
-      TRIVY_CACHE_DIR: ${{ github.workspace }}/trivy
+      # Use a persistent path outside github.workspace!
+      TRIVY_CACHE_DIR: 'C:/trivy-cache'
 
     steps:
       - name: Checkout code
@@ -85,10 +86,11 @@ jobs:
         run: |
           if (!(Test-Path "$env:TRIVY_CACHE_DIR\trivy.exe")) {
             Write-Host "Downloading Trivy $env:TRIVY_VERSION"
+            if (!(Test-Path "$env:TRIVY_CACHE_DIR")) { New-Item -ItemType Directory -Path "$env:TRIVY_CACHE_DIR" | Out-Null }
             $trivyZip = "trivy_${env:TRIVY_VERSION}_Windows-64bit.zip"
             $trivyUrl = "https://github.com/aquasecurity/trivy/releases/download/v${env:TRIVY_VERSION}/$trivyZip"
-            Invoke-WebRequest -Uri $trivyUrl -OutFile $trivyZip
-            Expand-Archive $trivyZip -DestinationPath "$env:TRIVY_CACHE_DIR"
+            Invoke-WebRequest -Uri $trivyUrl -OutFile "$env:TRIVY_CACHE_DIR\$trivyZip"
+            Expand-Archive "$env:TRIVY_CACHE_DIR\$trivyZip" -DestinationPath "$env:TRIVY_CACHE_DIR"
           } else {
             Write-Host "Trivy already cached"
           }

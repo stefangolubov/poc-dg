@@ -125,11 +125,13 @@ This repository includes three GitHub Actions workflows for CI/CD scenarios, all
 
 #### **Trivy CLI Caching (applies to all workflows)**
 
-All workflows now use a persistent Trivy CLI cache stored on the self-hosted runner (by default at `C:/trivy-cache`).
-- **On the first run:** Trivy is downloaded and cached.
+All workflows now use a persistent Trivy CLI cache stored on the self-hosted runner (by default at `C:/trivy-cache/<version>`).
+- **On the first run:** Trivy is downloaded and cached per version.
 - **On subsequent runs:** The cached Trivy binary is reused, speeding up workflow execution.
 
-No manual steps are required; the workflow will create and manage the cache automatically.
+No manual steps are required; the workflow will create and manage the cache automatically.  
+**All workflows are now standardized to use Trivy CLI version `0.64.0`.**  
+If you previously used a different version in any workflow, this has been unified for consistency.
 
 #### **Vulnerability Push Override and Trivy Version Selection (Admin workflow only)**
 
@@ -144,7 +146,7 @@ The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now support
     - **Benefit:** Admins can test/roll back Trivy versions per-run without editing the workflow file. Each version is cached in its own subdirectory for efficiency.
 
 **These two inputs apply only to the Admin workflow**.  
-The other workflows use the default Trivy version and do not allow push overrides.
+The other workflows use the default Trivy version (`0.64.0`) and do not allow push overrides.
 
 ---
 
@@ -183,6 +185,7 @@ The other workflows use the default Trivy version and do not allow push override
 - **Secrets:** `NEXUS_CI_BOT_USERNAME`, `NEXUS_CI_BOT_PASSWORD`
 - **Cannot push to:** `docker-base-images` (30501) — will receive unauthorized error (by design)
 - **Trivy cache:** Used for fast Trivy CLI startup
+- **Uses Trivy CLI version:** `0.64.0` (standardized across all workflows)
 
 #### **3. Manual - Build, Scan, and Push Docker Image to Nexus (Per-user Login)**
 
@@ -190,6 +193,7 @@ The other workflows use the default Trivy version and do not allow push override
 - **Use case:** Ad-hoc, testing, onboarding, or per-user auditing
 - **Can push to:** whichever repo the credentials permit
 - **Trivy cache:** Used for fast Trivy CLI startup
+- **Uses Trivy CLI version:** `0.64.0` (standardized across all workflows)
 
 ---
 

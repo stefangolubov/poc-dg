@@ -74,13 +74,6 @@ jobs:
           $tag = "${env:NEXUS_REPO_URL}/${env:IMAGE_NAME}:${env:IMAGE_TAG}"
           docker build -t "$tag" .
 
-      - name: Cache Trivy CLI
-        id: cache-trivy
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.TRIVY_CACHE_DIR }}
-          key: trivy-${{ env.TRIVY_VERSION }}-windows64
-
       - name: Download Trivy CLI if not cached
         shell: powershell
         run: |

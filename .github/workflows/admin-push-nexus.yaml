@@ -35,7 +35,8 @@ jobs:
       NEXUS_USERNAME: ${{ secrets.NEXUS_ADMIN_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_ADMIN_PASSWORD }}
       TRIVY_VERSION: "0.64.0"
-      TRIVY_CACHE_DIR: 'C:/trivy-cache'
+      # Store each Trivy version in its own cache directory
+      TRIVY_CACHE_DIR: "C:/trivy-cache/${{ env.TRIVY_VERSION }}"
       ALLOW_PUSH_ON_VULNERABILITIES: ${{ github.event.inputs.allow_push_on_vulnerabilities }}
 
     steps:

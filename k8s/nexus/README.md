@@ -131,12 +131,20 @@ All workflows now use a persistent Trivy CLI cache stored on the self-hosted run
 
 No manual steps are required; the workflow will create and manage the cache automatically.
 
-#### **Vulnerability Push Override (applies to Admin workflow only)**
+#### **Vulnerability Push Override and Trivy Version Selection (Admin workflow only)**
 
-The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now supports an optional input:
+The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now supports the following **additional inputs**:
+
 - `allow_push_on_vulnerabilities`: If set to `true`, allows admins to push Docker images **even when Trivy finds CRITICAL or HIGH vulnerabilities**.
     - **Default:** `false` (push is blocked if vulnerabilities found)
     - **Use with caution:** This should only be enabled by trusted users and is logged in the workflow run for auditability.
+
+- `trivy_version`: Allows admins to specify which version of the Trivy CLI to use for the scan.
+    - **Default:** `0.64.0`
+    - **Benefit:** Admins can test/roll back Trivy versions per-run without editing the workflow file. Each version is cached in its own subdirectory for efficiency.
+
+**These two inputs apply only to the Admin workflow**.  
+The other workflows use the default Trivy version and do not allow push overrides.
 
 ---
 
@@ -164,8 +172,9 @@ The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now support
 - **Can push to:** both `docker-app-images` (30502) and `docker-base-images` (30501)
 - **Secrets:** `NEXUS_ADMIN_USERNAME`, `NEXUS_ADMIN_PASSWORD`
 - **Trivy cache:** Used for fast Trivy CLI startup
-- **`allow_push_on_vulnerabilities` input:**
-    - Set to `true` to allow pushing images with vulnerabilities (use with caution).
+- **Additional inputs:**
+    - **`allow_push_on_vulnerabilities`:** Set to `true` to allow pushing images with vulnerabilities (use with caution).
+    - **`trivy_version`:** Select Trivy CLI version per run (default: `0.64.0`).
 
 #### **2. CI/CD - Build, Scan, and Push Docker Image to Nexus**
 
@@ -193,7 +202,7 @@ The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now support
 | Manual      | Any user          | app or base images    | Manual pushes, onboarding, troubleshooting, per-user auditing       |
 
 - **ci-bot** cannot push to base images (enforced by Nexus roles).
-- All workflows block the push if Trivy finds CRITICAL/HIGH vulnerabilities, **except for Admin workflow if `allow_push_on_vulnerabilities` is set to `true`**.
+- All workflows block the push if Trivy finds CRITICAL/HIGH vulnerabilities, **except for the Admin workflow if `allow_push_on_vulnerabilities` is set to `true`**.
 
 ---
 
@@ -201,7 +210,7 @@ The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now support
 
 - **Parameter Inputs:**  
   Each workflow allows you to specify the Nexus registry URL, image name, and tag (and, for manual flow, Nexus credentials).  
-  **Admin workflow** also allows you to set `allow_push_on_vulnerabilities`.
+  **Admin workflow** also allows you to set `allow_push_on_vulnerabilities` and `trivy_version`.
 
 - **Secrets Management:**  
   Docker registry credentials are securely accessed via GitHub secrets (or as workflow input for manual flow).
@@ -210,7 +219,7 @@ The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now support
   Ensures the workflow runs in your environment with access to Rancher Desktop's Docker daemon.
 
 - **Trivy Scanning and Caching:**  
-  The workflow downloads Trivy to a persistent cache (`C:/trivy-cache`) and scans the built image.
+  The workflow downloads Trivy to a persistent cache (`C:/trivy-cache/<version>`) and scans the built image.
     - If any critical/high vulnerabilities are found, the workflow fails and the image is **not pushed** (unless explicitly overridden in the Admin workflow).
 
 - **Push on Success:**  

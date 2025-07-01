@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       nexus_repo_url:
-        description: 'Nexus repository URL (e.g., 192.168.127.2:30500/myrepo)'
+        description: 'Nexus repository URL (e.g., 192.168.127.2:30502)'
         required: true
         type: string
       image_name:

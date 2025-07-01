@@ -23,6 +23,11 @@ on:
         options:
           - 'false'
           - 'true'
+      trivy_version:
+        description: 'Trivy CLI version (default: 0.64.0)'
+        required: false
+        default: '0.64.0'
+        type: string
 
 jobs:
   build-and-push:
@@ -34,7 +39,7 @@ jobs:
       IMAGE_TAG: ${{ github.event.inputs.image_tag }}
       NEXUS_USERNAME: ${{ secrets.NEXUS_ADMIN_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_ADMIN_PASSWORD }}
-      TRIVY_VERSION: "0.64.0"
+      TRIVY_VERSION: ${{ github.event.inputs.trivy_version }}
       ALLOW_PUSH_ON_VULNERABILITIES: ${{ github.event.inputs.allow_push_on_vulnerabilities }}
 
     steps:

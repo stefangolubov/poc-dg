@@ -35,8 +35,6 @@ jobs:
       NEXUS_USERNAME: ${{ secrets.NEXUS_ADMIN_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_ADMIN_PASSWORD }}
       TRIVY_VERSION: "0.64.0"
-      # Store each Trivy version in its own cache directory
-      TRIVY_CACHE_DIR: "C:/trivy-cache/${{ env.TRIVY_VERSION }}"
       ALLOW_PUSH_ON_VULNERABILITIES: ${{ github.event.inputs.allow_push_on_vulnerabilities }}
 
     steps:
@@ -78,25 +76,27 @@ jobs:
       - name: Download Trivy CLI if not cached
         shell: powershell
         run: |
-          if (!(Test-Path "$env:TRIVY_CACHE_DIR\trivy.exe")) {
+          $trivyCacheDir = "C:/trivy-cache/$env:TRIVY_VERSION"
+          if (!(Test-Path "$trivyCacheDir\trivy.exe")) {
             Write-Host "Downloading Trivy $env:TRIVY_VERSION"
-            if (!(Test-Path "$env:TRIVY_CACHE_DIR")) { New-Item -ItemType Directory -Path "$env:TRIVY_CACHE_DIR" | Out-Null }
+            if (!(Test-Path "$trivyCacheDir")) { New-Item -ItemType Directory -Path "$trivyCacheDir" | Out-Null }
             $trivyZip = "trivy_${env:TRIVY_VERSION}_Windows-64bit.zip"
             $trivyUrl = "https://github.com/aquasecurity/trivy/releases/download/v${env:TRIVY_VERSION}/$trivyZip"
-            Invoke-WebRequest -Uri $trivyUrl -OutFile "$env:TRIVY_CACHE_DIR\$trivyZip"
-            Expand-Archive "$env:TRIVY_CACHE_DIR\$trivyZip" -DestinationPath "$env:TRIVY_CACHE_DIR"
+            Invoke-WebRequest -Uri $trivyUrl -OutFile "$trivyCacheDir\$trivyZip"
+            Expand-Archive "$trivyCacheDir\$trivyZip" -DestinationPath "$trivyCacheDir"
           } else {
             Write-Host "Trivy already cached"
           }
-          $env:PATH += ";$env:TRIVY_CACHE_DIR"
+          $env:PATH += ";$trivyCacheDir"
 
       - name: Scan Docker image with Trivy (with override option)
         id: trivy-scan
         shell: powershell
         run: |
-          $env:PATH += ";$env:TRIVY_CACHE_DIR"
+          $trivyCacheDir = "C:/trivy-cache/$env:TRIVY_VERSION"
+          $env:PATH += ";$trivyCacheDir"
           $tag = "${env:NEXUS_REPO_URL}/${env:IMAGE_NAME}:${env:IMAGE_TAG}"
-          & "$env:TRIVY_CACHE_DIR\trivy.exe" image --severity CRITICAL,HIGH --exit-code 1 $tag
+          & "$trivyCacheDir\trivy.exe" image --severity CRITICAL,HIGH --exit-code 1 $tag
         continue-on-error: true
 
       - name: Warn if vulnerabilities found (and allow override)

@@ -34,7 +34,7 @@ jobs:
       IMAGE_TAG: ${{ github.event.inputs.image_tag }}
       NEXUS_USERNAME: ${{ secrets.NEXUS_ADMIN_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_ADMIN_PASSWORD }}
-      TRIVY_VERSION: "0.63.0"
+      TRIVY_VERSION: "0.64.0"
       TRIVY_CACHE_DIR: 'C:/trivy-cache'
       ALLOW_PUSH_ON_VULNERABILITIES: ${{ github.event.inputs.allow_push_on_vulnerabilities }}
 

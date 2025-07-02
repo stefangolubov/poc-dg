@@ -44,7 +44,9 @@ jobs:
 
       - name: Run OWASP Dependency-Check (Maven Plugin)
         shell: powershell
-        run: mvn org.owasp:dependency-check-maven:check -Dnvd.api.key="${{ secrets.NVD_API_KEY }}" -Dnvd.api.delay=10000
+        run: |
+          $apiKey = "${{ secrets.NVD_API_KEY }}"
+          mvn org.owasp:dependency-check-maven:check -Dnvd.api.key=$apiKey -Dnvd.api.delay=10000
 
       # Upload Dependency-Check Report
       - name: Upload Dependency-Check HTML report

@@ -39,11 +39,19 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Build Java application with Maven
+        run: mvn clean package -DskipTests
+
       - name: Run OWASP Dependency-Check (Maven Plugin)
         run: mvn org.owasp:dependency-check-maven:check -Dnvd.api.key=${{ secrets.NVD_API_KEY }}
 
-      - name: Build Java application with Maven
-        run: mvn clean package -DskipTests
+      # Upload Dependency-Check Report
+      - name: Upload Dependency-Check HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.html
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

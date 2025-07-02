@@ -46,7 +46,7 @@ jobs:
         shell: powershell
         run: |
           $apiKey = "${{ secrets.NVD_API_KEY }}"
-          mvn org.owasp:dependency-check-maven:check -Dnvd.api.key=$apiKey -Dnvd.api.delay=10000
+          mvn "org.owasp:dependency-check-maven:check" "-Dnvd.api.key=$apiKey" "-Dnvd.api.delay=10000"
 
       # Upload Dependency-Check Report
       - name: Upload Dependency-Check HTML report

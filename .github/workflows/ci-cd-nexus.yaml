@@ -42,8 +42,12 @@ jobs:
       - name: Build Java application with Maven
         run: mvn clean package -DskipTests
 
+      - name: Debug NVD API Key
+        run: echo "KEY is ${{ secrets.NVD_API_KEY }}"
+
       - name: Run OWASP Dependency-Check (Maven Plugin)
-        run: mvn org.owasp:dependency-check-maven:check -Dnvd.api.key=${{ secrets.NVD_API_KEY }}
+        shell: powershell
+        run: mvn org.owasp:dependency-check-maven:check "-Dnvd.api.key=${{ secrets.NVD_API_KEY }}"
 
       # Upload Dependency-Check Report
       - name: Upload Dependency-Check HTML report

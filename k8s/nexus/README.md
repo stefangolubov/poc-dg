@@ -16,6 +16,8 @@ This repository contains Kubernetes manifests for deploying Sonatype Nexus 3 as 
     - [Available Workflows](#available-workflows)
     - [Flow Use Cases](#flow-use-cases)
     - [Workflow Steps Explained](#workflow-steps-explained)
+    - [Trivy Dependency (SCA) Scanning](#trivy-dependency-sca-scanning)
+    - [Trivy Database Sharing and Versioning](#trivy-database-sharing-and-versioning)
 - [Troubleshooting](#troubleshooting)
 - [References](#references)
 
@@ -28,7 +30,7 @@ This repository contains Kubernetes manifests for deploying Sonatype Nexus 3 as 
 - **[Rancher Desktop](https://rancherdesktop.io/)** (if running locally on Windows)
 - **Docker** (with access to your Kubernetes cluster)
 - **Maven** for Java builds
-- **Trivy** for image scanning (via CLI or GitHub Actions)
+- **Trivy** for image and dependency scanning (via CLI or GitHub Actions)
 - **GitHub account** with repository access
 
 ---
@@ -119,7 +121,7 @@ If using **Rancher Desktop** on Windows, configure Docker to trust your local Ne
 
 ## GitHub Actions CI/CD Integration
 
-This repository includes three GitHub Actions workflows for CI/CD scenarios, all with Trivy image scanning before push.
+This repository includes three GitHub Actions workflows for CI/CD scenarios, all with Trivy dependency and image scanning before push.
 
 ### 🗂 **Workflow Enhancements**
 
@@ -130,14 +132,20 @@ All workflows now use a persistent Trivy CLI cache stored on the self-hosted run
 - **On subsequent runs:** The cached Trivy binary is reused, speeding up workflow execution.
 
 No manual steps are required; the workflow will create and manage the cache automatically.  
-**All workflows are now standardized to use Trivy CLI version `0.64.0`.**  
+**All workflows are now standardized to use Trivy CLI version `0.64.0` (except Admin, which allows per-run version selection).**  
 If you previously used a different version in any workflow, this has been unified for consistency.
+
+#### **Trivy Dependency (SCA) Scanning (NEW, applies to all workflows)**
+
+All workflows now include a Trivy Software Composition Analysis (SCA) step to scan Maven dependencies (`pom.xml`) before building and pushing Docker images.
+- **Any detected CRITICAL or HIGH vulnerabilities in dependencies will block the push to Nexus** (unless explicitly overridden in the Admin workflow).
+- This provides an extra layer of security by ensuring vulnerable dependencies are not shipped, not just vulnerable images.
 
 #### **Vulnerability Push Override and Trivy Version Selection (Admin workflow only)**
 
 The **Admin - Build, Scan, and Push Docker Image to Nexus** workflow now supports the following **additional inputs**:
 
-- `allow_push_on_vulnerabilities`: If set to `true`, allows admins to push Docker images **even when Trivy finds CRITICAL or HIGH vulnerabilities**.
+- `allow_push_on_vulnerabilities`: If set to `true`, allows admins to push Docker images **even when Trivy finds CRITICAL or HIGH vulnerabilities** in either dependencies or image.
     - **Default:** `false` (push is blocked if vulnerabilities found)
     - **Use with caution:** This should only be enabled by trusted users and is logged in the workflow run for auditability.
 
@@ -174,6 +182,7 @@ The other workflows use the default Trivy version (`0.64.0`) and do not allow pu
 - **Can push to:** both `docker-app-images` (30502) and `docker-base-images` (30501)
 - **Secrets:** `NEXUS_ADMIN_USERNAME`, `NEXUS_ADMIN_PASSWORD`
 - **Trivy cache:** Used for fast Trivy CLI startup
+- **Dependency Scanning:** Trivy SCA step scans Maven dependencies for vulnerabilities before push.
 - **Additional inputs:**
     - **`allow_push_on_vulnerabilities`:** Set to `true` to allow pushing images with vulnerabilities (use with caution).
     - **`trivy_version`:** Select Trivy CLI version per run (default: `0.64.0`).
@@ -185,6 +194,7 @@ The other workflows use the default Trivy version (`0.64.0`) and do not allow pu
 - **Secrets:** `NEXUS_CI_BOT_USERNAME`, `NEXUS_CI_BOT_PASSWORD`
 - **Cannot push to:** `docker-base-images` (30501) — will receive unauthorized error (by design)
 - **Trivy cache:** Used for fast Trivy CLI startup
+- **Dependency Scanning:** Trivy SCA step scans Maven dependencies for vulnerabilities before push.
 - **Uses Trivy CLI version:** `0.64.0` (standardized across all workflows)
 
 #### **3. Manual - Build, Scan, and Push Docker Image to Nexus (Per-user Login)**
@@ -193,6 +203,7 @@ The other workflows use the default Trivy version (`0.64.0`) and do not allow pu
 - **Use case:** Ad-hoc, testing, onboarding, or per-user auditing
 - **Can push to:** whichever repo the credentials permit
 - **Trivy cache:** Used for fast Trivy CLI startup
+- **Dependency Scanning:** Trivy SCA step scans Maven dependencies for vulnerabilities before push.
 - **Uses Trivy CLI version:** `0.64.0` (standardized across all workflows)
 
 ---
@@ -206,7 +217,7 @@ The other workflows use the default Trivy version (`0.64.0`) and do not allow pu
 | Manual      | Any user          | app or base images    | Manual pushes, onboarding, troubleshooting, per-user auditing       |
 
 - **ci-bot** cannot push to base images (enforced by Nexus roles).
-- All workflows block the push if Trivy finds CRITICAL/HIGH vulnerabilities, **except for the Admin workflow if `allow_push_on_vulnerabilities` is set to `true`**.
+- All workflows block the push if Trivy finds CRITICAL/HIGH vulnerabilities in dependencies or the image, **except for the Admin workflow if `allow_push_on_vulnerabilities` is set to `true`**.
 
 ---
 
@@ -222,15 +233,57 @@ The other workflows use the default Trivy version (`0.64.0`) and do not allow pu
 - **Self-hosted Runner:**  
   Ensures the workflow runs in your environment with access to Rancher Desktop's Docker daemon.
 
-- **Trivy Scanning and Caching:**  
-  The workflow downloads Trivy to a persistent cache (`C:/trivy-cache/<version>`) and scans the built image.
-    - If any critical/high vulnerabilities are found, the workflow fails and the image is **not pushed** (unless explicitly overridden in the Admin workflow).
+- **Trivy Dependency (SCA) Scanning:**  
+  The workflow downloads Trivy to a persistent cache (`C:/trivy-cache/<version>`) and scans the Maven project directory for vulnerable dependencies before building the Docker image.
+    - If any critical/high vulnerabilities are found in dependencies, the workflow fails and the image is **not pushed** (unless explicitly overridden in the Admin workflow).
+
+- **Trivy Image Scanning:**  
+  After building the Docker image, Trivy scans the image for vulnerabilities. Critical/high vulnerabilities block the push unless overridden in the Admin workflow.
 
 - **Push on Success:**  
   The image is only pushed if all previous steps succeed (or if override is enabled in Admin workflow).
 
 - **PowerShell Adaptation:**  
   All shell commands needing environment variable interpolation are written for PowerShell compatibility on Windows.
+
+---
+
+### Trivy Dependency (SCA) Scanning
+
+Trivy SCA (Software Composition Analysis) scanning is integrated in all workflows:
+- **Scans the Maven project (`pom.xml`) for known-vulnerable dependencies using Trivy's `fs` scanner.**
+- **Blocks the image push if critical/high vulnerabilities are found,** except in the Admin workflow if the override flag is used.
+
+**Why?**  
+This ensures you do not ship Docker images that contain known-vulnerable Java dependencies, adding an extra layer of security to your supply chain.
+
+**Sample step (in PowerShell):**
+```powershell
+& "$trivyCacheDir\trivy.exe" fs --scanners vuln --severity CRITICAL,HIGH --exit-code 1 --format table .
+```
+
+---
+
+### Trivy Database Sharing and Versioning
+
+Trivy downloads and caches a vulnerability database (`db`) in the directory specified by the `TRIVY_CACHE_DIR` environment variable (e.g., `C:/trivy-cache/0.64.0/db`).
+
+#### **Shared vs. Per-Version DB**
+
+- **By default, all Trivy versions will use the same DB if `TRIVY_CACHE_DIR` is shared** (e.g., `C:/trivy-cache`).
+- **In these workflows, each Trivy version is cached in its own subdirectory** (e.g., `C:/trivy-cache/0.64.0`), minimizing conflicts and keeping things clean.
+
+#### **Why does this matter?**
+
+If you run multiple workflows simultaneously with different Trivy versions **and use a shared DB**, you may experience:
+- Database corruption
+- Repeated re-downloads
+- Scan failures due to DB schema incompatibility
+
+**Best Practice:**  
+Each workflow uses a version-specific cache directory (`C:/trivy-cache/<version>`) to avoid conflicts and ensure reliable, parallel execution even if different Trivy versions are in use.
+
+**If you consistently use only one Trivy version and never run concurrent jobs with different versions, a shared DB is fine. For most CI/CD environments, per-version caching is safer.**
 
 ---
 
@@ -241,6 +294,8 @@ The other workflows use the default Trivy version (`0.64.0`) and do not allow pu
     - Ensure the correct Nexus user/role is used for the correct repo/port.
 - **Trivy not found:**
     - The workflow downloads and caches Trivy CLI automatically. For local use, install [Trivy](https://aquasecurity.github.io/trivy/).
+- **Trivy scan fails or reports DB errors:**
+    - If running multiple Trivy versions in parallel with a shared cache, use per-version cache directories to avoid DB conflicts.
 - **Runner cannot access Docker:**
     - The runner must be started by your regular user (not as a service), and Rancher Desktop must be running in that user session.
 - **GitHub workflow fails at Bash-specific steps:**
@@ -261,6 +316,5 @@ The other workflows use the default Trivy version (`0.64.0`) and do not allow pu
 
 ## Additional Notes
 
-- The previously used port 30500/5000 and associated repo/config are no longer required and have been removed from manifests and flows.
 - For advanced workflow customization or multi-stage builds, refer to the `.github/workflows/` directory.
 - All flows are compatible with Windows self-hosted runners using PowerShell and Rancher Desktop Docker engine.

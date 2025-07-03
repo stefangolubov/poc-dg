@@ -34,8 +34,7 @@ jobs:
       IMAGE_TAG: ${{ github.event.inputs.image_tag }}
       NEXUS_USERNAME: ${{ github.event.inputs.nexus_username }}
       NEXUS_PASSWORD: ${{ github.event.inputs.nexus_password }}
-      TRIVY_VERSION: "0.64.0" # Updated to match admin workflow
-      # Use a persistent path outside github.workspace!
+      TRIVY_VERSION: "0.64.0"
       TRIVY_CACHE_DIR: 'C:/trivy-cache'
 
     steps:
@@ -50,6 +49,29 @@ jobs:
 
       - name: Build Java application with Maven
         run: mvn clean package -DskipTests
+
+      - name: Download Trivy CLI if not cached
+        shell: powershell
+        run: |
+          $trivyCacheDir = "${env:TRIVY_CACHE_DIR}/$env:TRIVY_VERSION"
+          if (!(Test-Path "$trivyCacheDir\trivy.exe")) {
+            Write-Host "Downloading Trivy $env:TRIVY_VERSION"
+            if (!(Test-Path "$trivyCacheDir")) { New-Item -ItemType Directory -Path "$trivyCacheDir" | Out-Null }
+            $trivyZip = "trivy_${env:TRIVY_VERSION}_Windows-64bit.zip"
+            $trivyUrl = "https://github.com/aquasecurity/trivy/releases/download/v${env:TRIVY_VERSION}/$trivyZip"
+            Invoke-WebRequest -Uri $trivyUrl -OutFile "$trivyCacheDir\$trivyZip"
+            Expand-Archive "$trivyCacheDir\$trivyZip" -DestinationPath "$trivyCacheDir"
+          } else {
+            Write-Host "Trivy already cached"
+          }
+          $env:PATH += ";$trivyCacheDir"
+
+      - name: Scan Maven dependencies with Trivy
+        shell: powershell
+        run: |
+          $trivyCacheDir = "${env:TRIVY_CACHE_DIR}/$env:TRIVY_VERSION"
+          $env:PATH += ";$trivyCacheDir"
+          & "$trivyCacheDir\trivy.exe" fs --scanners vuln --severity CRITICAL,HIGH --exit-code 1 --format table .
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -73,22 +95,6 @@ jobs:
         run: |
           $tag = "${env:NEXUS_REPO_URL}/${env:IMAGE_NAME}:${env:IMAGE_TAG}"
           docker build -t "$tag" .
-
-      - name: Download Trivy CLI if not cached
-        shell: powershell
-        run: |
-          $trivyCacheDir = "${env:TRIVY_CACHE_DIR}/$env:TRIVY_VERSION"
-          if (!(Test-Path "$trivyCacheDir\trivy.exe")) {
-            Write-Host "Downloading Trivy $env:TRIVY_VERSION"
-            if (!(Test-Path "$trivyCacheDir")) { New-Item -ItemType Directory -Path "$trivyCacheDir" | Out-Null }
-            $trivyZip = "trivy_${env:TRIVY_VERSION}_Windows-64bit.zip"
-            $trivyUrl = "https://github.com/aquasecurity/trivy/releases/download/v${env:TRIVY_VERSION}/$trivyZip"
-            Invoke-WebRequest -Uri $trivyUrl -OutFile "$trivyCacheDir\$trivyZip"
-            Expand-Archive "$trivyCacheDir\$trivyZip" -DestinationPath "$trivyCacheDir"
-          } else {
-            Write-Host "Trivy already cached"
-          }
-          $env:PATH += ";$trivyCacheDir"
 
       - name: Scan Docker image with Trivy
         shell: powershell

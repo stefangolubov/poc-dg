@@ -55,6 +55,44 @@ jobs:
       - name: Build Java application with Maven
         run: mvn clean package -DskipTests
 
+      - name: Download Trivy CLI if not cached
+        shell: powershell
+        run: |
+          $trivyCacheDir = "C:/trivy-cache/$env:TRIVY_VERSION"
+          if (!(Test-Path "$trivyCacheDir\trivy.exe")) {
+            Write-Host "Downloading Trivy $env:TRIVY_VERSION"
+            if (!(Test-Path "$trivyCacheDir")) { New-Item -ItemType Directory -Path "$trivyCacheDir" | Out-Null }
+            $trivyZip = "trivy_${env:TRIVY_VERSION}_Windows-64bit.zip"
+            $trivyUrl = "https://github.com/aquasecurity/trivy/releases/download/v${env:TRIVY_VERSION}/$trivyZip"
+            Invoke-WebRequest -Uri $trivyUrl -OutFile "$trivyCacheDir\$trivyZip"
+            Expand-Archive "$trivyCacheDir\$trivyZip" -DestinationPath "$trivyCacheDir"
+          } else {
+            Write-Host "Trivy already cached"
+          }
+          $env:PATH += ";$trivyCacheDir"
+
+      - name: Scan Maven dependencies with Trivy (with override option)
+        id: trivy-sca
+        shell: powershell
+        run: |
+          $trivyCacheDir = "C:/trivy-cache/$env:TRIVY_VERSION"
+          $env:PATH += ";$trivyCacheDir"
+          & "$trivyCacheDir\trivy.exe" fs --scanners vuln --severity CRITICAL,HIGH --exit-code 1 --format table .
+        continue-on-error: true
+
+      - name: Warn if vulnerable dependencies found (and allow override)
+        if: steps.trivy-sca.outcome == 'failure' && env.ALLOW_PUSH_ON_VULNERABILITIES == 'true'
+        shell: powershell
+        run: |
+          Write-Host "::warning::Trivy SCA scan found vulnerable dependencies, but ALLOW_PUSH_ON_VULNERABILITIES is true. Proceeding to next steps ON YOUR OWN RESPONSIBILITY."
+
+      - name: Fail workflow if vulnerable dependencies found and override not allowed
+        if: steps.trivy-sca.outcome == 'failure' && env.ALLOW_PUSH_ON_VULNERABILITIES != 'true'
+        shell: powershell
+        run: |
+          Write-Error "Trivy SCA scan found vulnerable dependencies and pushing is NOT allowed. Set allow_push_on_vulnerabilities to 'true' to override."
+          exit 1
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -78,22 +116,6 @@ jobs:
           $tag = "${env:NEXUS_REPO_URL}/${env:IMAGE_NAME}:${env:IMAGE_TAG}"
           docker build -t "$tag" .
 
-      - name: Download Trivy CLI if not cached
-        shell: powershell
-        run: |
-          $trivyCacheDir = "C:/trivy-cache/$env:TRIVY_VERSION"
-          if (!(Test-Path "$trivyCacheDir\trivy.exe")) {
-            Write-Host "Downloading Trivy $env:TRIVY_VERSION"
-            if (!(Test-Path "$trivyCacheDir")) { New-Item -ItemType Directory -Path "$trivyCacheDir" | Out-Null }
-            $trivyZip = "trivy_${env:TRIVY_VERSION}_Windows-64bit.zip"
-            $trivyUrl = "https://github.com/aquasecurity/trivy/releases/download/v${env:TRIVY_VERSION}/$trivyZip"
-            Invoke-WebRequest -Uri $trivyUrl -OutFile "$trivyCacheDir\$trivyZip"
-            Expand-Archive "$trivyCacheDir\$trivyZip" -DestinationPath "$trivyCacheDir"
-          } else {
-            Write-Host "Trivy already cached"
-          }
-          $env:PATH += ";$trivyCacheDir"
-
       - name: Scan Docker image with Trivy (with override option)
         id: trivy-scan
         shell: powershell
@@ -104,17 +126,17 @@ jobs:
           & "$trivyCacheDir\trivy.exe" image --scanners vuln,secret --severity CRITICAL,HIGH --exit-code 1 $tag
         continue-on-error: true
 
-      - name: Warn if vulnerabilities found (and allow override)
+      - name: Warn if vulnerabilities found in image (and allow override)
         if: steps.trivy-scan.outcome == 'failure' && env.ALLOW_PUSH_ON_VULNERABILITIES == 'true'
         shell: powershell
         run: |
-          Write-Host "::warning::Trivy scan found vulnerabilities, but ALLOW_PUSH_ON_VULNERABILITIES is true. Proceeding to push Docker image ON YOUR OWN RESPONSIBILITY."
+          Write-Host "::warning::Trivy image scan found vulnerabilities, but ALLOW_PUSH_ON_VULNERABILITIES is true. Proceeding to push Docker image ON YOUR OWN RESPONSIBILITY."
 
-      - name: Fail workflow if vulnerabilities found and override not allowed
+      - name: Fail workflow if vulnerabilities found in image and override not allowed
         if: steps.trivy-scan.outcome == 'failure' && env.ALLOW_PUSH_ON_VULNERABILITIES != 'true'
         shell: powershell
         run: |
-          Write-Error "Trivy scan found vulnerabilities and pushing is NOT allowed. Set allow_push_on_vulnerabilities to 'true' to override."
+          Write-Error "Trivy image scan found vulnerabilities and pushing is NOT allowed. Set allow_push_on_vulnerabilities to 'true' to override."
           exit 1
 
       - name: Push Docker image to Nexus
